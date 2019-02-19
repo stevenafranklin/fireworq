@@ -36,7 +36,7 @@ generate:
 
 deps:
 	GOOS= GOARCH= glide install
-	GOOS= GOARCH= ${GO} get github.com/jteeuwen/go-bindata/...
+	GOOS= GOARCH= ${GO} get github.com/jessevdk/go-assets-builder
 	GOOS= GOARCH= ${GO} get github.com/golang/mock/mockgen
 
 test_deps:
@@ -46,18 +46,19 @@ test_deps:
 	${GO} get github.com/wadey/gocovmerge
 	${GO} get github.com/t-yuki/gocover-cobertura
 
-lint:
+lint: generate
 	${GO} get github.com/golang/lint/golint
 	${GO} vet ./...
 	for d in $$(${GO} list ./...); do \
 	  golint --set_exit_status "$$d" || exit $$? ; \
 	done
 	for f in $$(${GO} list -f '{{$$p := .}}{{range $$f := .GoFiles}}{{$$p.Dir}}/{{$$f}} {{end}} {{range $$f := .TestGoFiles}}{{$$p.Dir}}/{{$$f}} {{end}}' ./... | xargs); do \
+	  [ $$(basename "$$f") = 'assets.go' ] && continue ; \
 	  test -z "$$(gofmt -d -s "$$f" | tee /dev/stderr)" || exit $$? ; \
 	done
 
 clean:
-	find . -name bindata.go -delete -or -name 'mock_*.go' -delete
+	find . -name assets.go -delete -or -name 'mock_*.go' -delete
 	rm -f assets.go
 	rm -f junit_output.xml profile.cov coverage.html coverage.xml
 	rm -f $(BIN)
